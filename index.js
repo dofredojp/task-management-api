@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const taskRoutes = require('./routes/taskRoutes');
 const { router: authRoutes } = require('./routes/authRoutes');
+const cors = require('cors');
 
 dotenv.config(); // Load environment variables
 
@@ -11,6 +12,7 @@ const PORT = 3000;
 
 // Middleware to parse JSON
 app.use(express.json());
+app.use(cors());
 
 // Connect to MongoDB Atlas using environment variable
 mongoose.connect(process.env.MONGODB_URI)

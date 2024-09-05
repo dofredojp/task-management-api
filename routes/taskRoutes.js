@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 const { authenticate } = require('./authRoutes');
-const mongoose = require('mongoose');
 
 // Create a new task (Protected)
 router.post('/tasks', authenticate, async (req, res) => {
@@ -41,30 +40,66 @@ router.get('/tasks', authenticate, async (req, res) => {
     }
 });
 
-// Get a task by ID or title (Protected)
-router.get('/tasks/:idOrTitle', authenticate, async (req, res) => {
-    const { idOrTitle } = req.params;
-
+//  Search API 
+router.get('/tasks/search', authenticate, async (req, res) => {
     try {
-        let task;
+        const { title = '', status, priority, dueDate, page = 1, limit = 10 } = req.query;
 
-        // Check if the parameter is a valid MongoDB ObjectId (search by ID)
-        if (mongoose.Types.ObjectId.isValid(idOrTitle)) {
-            task = await Task.findById(idOrTitle);
+        // Build the search query dynamically
+        let query = {};
+
+        if (title) {
+            query.title = { $regex: title, $options: 'i' }; // Case-insensitive search
+        }
+        if (status) {
+            query.status = status; // Exact match on status (e.g., 'completed', 'pending')
+        }
+        if (priority) {
+            query.priority = priority; // Exact match on priority (e.g., 'high', 'low')
+        }
+        if (dueDate && dueDate != 'null') {
+            // Match tasks with due dates greater than or equal to the provided date
+            query.dueDate = { $gte: new Date(dueDate) };
         }
 
-        // If not a valid ObjectId or no task found, search by title (case-insensitive)
-        if (!task) {
-            task = await Task.findOne({ title: { $regex: new RegExp(idOrTitle, 'i') } });
-        }
+        // Get total count of tasks that match the query
+        const totalItems = await Task.countDocuments(query);
 
+        // Paginate the tasks using skip() and limit()
+        const tasks = await Task.find(query)
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit))
+            .exec();
+
+        // Calculate total pages
+        const totalPages = Math.ceil(totalItems / limit);
+
+        // Return the tasks and pagination metadata
+        res.status(200).json({
+            tasks,
+            totalItems,
+            totalPages,
+            currentPage: parseInt(page),
+            itemsPerPage: parseInt(limit),
+        });
+    } catch (error) {
+        console.error('Error searching tasks:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+// Get task by ID
+router.get('/tasks/:id', authenticate, async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
         if (!task) {
             return res.status(404).json({ message: 'Task not found' });
         }
-
         res.status(200).json(task);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
+    } catch (error) {
+        console.error('Error fetching task by ID:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 });
 

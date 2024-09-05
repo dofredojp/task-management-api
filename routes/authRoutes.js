@@ -1,8 +1,10 @@
 const express = require('express');
-const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const Blacklist = require('../models/Blacklist');
+
+const router = express.Router();
 
 // Secret key for signing JWT
 const JWT_SECRET = 'your_secret_key';
@@ -58,11 +60,15 @@ router.post('/login', async (req, res) => {
 });
 
 // Middleware to protect routes
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ message: 'Authentication required' });
 
     try {
+        // Check if token is blacklisted
+        const blacklisted = await Blacklist.findOne({ token });
+        if (blacklisted) return res.status(401).json({ message: 'Token is invalidated' });
+
         const decoded = jwt.verify(token, JWT_SECRET);
         req.userId = decoded.userId;
         next();
@@ -71,10 +77,18 @@ const authenticate = (req, res, next) => {
     }
 };
 
-// Logout API (for simplicity, this API will just return a response)
-router.post('/logout', (req, res) => {
-    // In real applications, you might handle JWT invalidation by using blacklists
-    res.status(200).json({ message: 'Logged out successfully' });
+// Logout API
+router.post('/logout', async (req, res) => {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    try {
+        // Add token to blacklist
+        await new Blacklist({ token }).save();
+        res.status(200).json({ message: 'Logged out successfully' });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
 });
 
 module.exports = { router, authenticate };

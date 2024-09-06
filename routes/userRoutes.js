@@ -5,7 +5,6 @@ const { authenticate } = require('./authRoutes');
 
 const router = express.Router();
 
-// Profile route - Get user profile details
 router.get('/profile', authenticate, async (req, res) => {
     try {
         const user = await User.findById(req.userId).select('-password'); // Exclude password field
@@ -13,7 +12,6 @@ router.get('/profile', authenticate, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Send the user profile details
         res.json(user);
     } catch (err) {
         console.log("ERROR: ", err)
@@ -31,13 +29,11 @@ router.post('/change-password', authenticate, async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Check if current password matches
-        const isMatch = await user.matchPassword(currentPassword); // Implement matchPassword in User model
+        const isMatch = await user.matchPassword(currentPassword); 
         if (!isMatch) {
             return res.status(400).json({ message: 'Current password is incorrect' });
         }
 
-        // Set new password
         user.password = newPassword;
         await user.save();
 

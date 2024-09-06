@@ -23,9 +23,9 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.log(err));
 
 // Use auth and task routes
-app.use('/api', authRoutes);  // Authentication routes
-app.use('/api', taskRoutes);  // Task routes
-app.use('/api', userRoutes);  // User routes
+app.use('/api', authRoutes);
+app.use('/api', taskRoutes);
+app.use('/api', userRoutes); 
 
 app.get('/', (req, res) => {
     res.send('Welcome to the Task Management API');

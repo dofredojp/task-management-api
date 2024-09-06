@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const taskRoutes = require('./routes/taskRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { router: authRoutes } = require('./routes/authRoutes');
 const cors = require('cors');
 
@@ -24,6 +25,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Use auth and task routes
 app.use('/api', authRoutes);  // Authentication routes
 app.use('/api', taskRoutes);  // Task routes
+app.use('/api', userRoutes);  // User routes
 
 app.get('/', (req, res) => {
     res.send('Welcome to the Task Management API');

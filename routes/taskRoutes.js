@@ -3,7 +3,6 @@ const router = express.Router();
 const Task = require('../models/Task');
 const { authenticate } = require('./authRoutes');
 
-// Create a new task (Protected)
 router.post('/tasks', authenticate, async (req, res) => {
     try {
         const task = new Task(req.body);
@@ -14,17 +13,14 @@ router.post('/tasks', authenticate, async (req, res) => {
     }
 });
 
-// Get all tasks with pagination (Protected)
 router.get('/tasks', authenticate, async (req, res) => {
     try {
-        // Pagination parameters
-        const page = parseInt(req.query.page) || 1; // Default to page 1
-        const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
 
-        // Calculate the number of items to skip
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10; 
+
         const skip = (page - 1) * limit;
 
-        // Fetch tasks with pagination
         const tasks = await Task.find().skip(skip).limit(limit);
         const totalTasks = await Task.countDocuments();
 
@@ -40,12 +36,11 @@ router.get('/tasks', authenticate, async (req, res) => {
     }
 });
 
-//  Search API 
+
 router.get('/tasks/search', authenticate, async (req, res) => {
     try {
         const { title = '', status, priority, dueDate, page = 1, limit = 10 } = req.query;
 
-        // Build the search query dynamically
         let query = {};
 
         if (title) {
@@ -58,23 +53,18 @@ router.get('/tasks/search', authenticate, async (req, res) => {
             query.priority = priority; // Exact match on priority (e.g., 'high', 'low')
         }
         if (dueDate && dueDate != 'null') {
-            // Match tasks with due dates greater than or equal to the provided date
             query.dueDate = { $gte: new Date(dueDate) };
         }
 
-        // Get total count of tasks that match the query
         const totalItems = await Task.countDocuments(query);
 
-        // Paginate the tasks using skip() and limit()
         const tasks = await Task.find(query)
             .skip((page - 1) * limit)
             .limit(parseInt(limit))
             .exec();
 
-        // Calculate total pages
         const totalPages = Math.ceil(totalItems / limit);
 
-        // Return the tasks and pagination metadata
         res.status(200).json({
             tasks,
             totalItems,
@@ -104,7 +94,7 @@ router.get('/tasks/:id', authenticate, async (req, res) => {
 });
 
 
-// Update a task by ID (Protected)
+// Update a task by ID
 router.put('/tasks/:id', authenticate, async (req, res) => {
     try {
         const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -115,7 +105,7 @@ router.put('/tasks/:id', authenticate, async (req, res) => {
     }
 });
 
-// Delete a task by ID (Protected)
+// Delete a task by ID
 router.delete('/tasks/:id', authenticate, async (req, res) => {
     try {
         const task = await Task.findByIdAndDelete(req.params.id);

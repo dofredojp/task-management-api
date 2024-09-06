@@ -47,10 +47,10 @@ router.get('/tasks/search', authenticate, async (req, res) => {
             query.title = { $regex: title, $options: 'i' }; // Case-insensitive search
         }
         if (status) {
-            query.status = status; // Exact match on status (e.g., 'completed', 'pending')
+            query.status = status; 
         }
         if (priority) {
-            query.priority = priority; // Exact match on priority (e.g., 'high', 'low')
+            query.priority = priority; 
         }
         if (dueDate && dueDate != 'null') {
             query.dueDate = { $gte: new Date(dueDate) };

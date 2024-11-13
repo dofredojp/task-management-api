@@ -11,6 +11,8 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.MONGODB_URI; 
 
+
+// Additional comment
 // Signup (Register) API
 router.post('/signup', async (req, res) => {
     try {
